@@ -16,14 +16,19 @@ nksData = {}
 
 for index in [100]: #, 124
 	nksData[index] = {}
-	for addr in tqdm(range(nks.getInd(nksFile, index), nks.getInd(nksFile, index+8))):
-		try:
-			length, output = nks.getStr(nksFile, addr)
-			if output is not None:
-				nksData[index][addr] = {'content': output, 'length': length}
-		except UnicodeDecodeError:
-			None
-		addr += 1
+	addr = nks.getInd(nksFile, index)
+	with tqdm(initial=nks.getInd(nksFile, index), total=nks.getInd(nksFile, index+8)) as pbar:
+		while addr < nks.getInd(nksFile, index+8):
+			try:
+				length, output = nks.getStr(nksFile, addr)
+				if output is not None:
+					nksData[index][addr] = {'content': output, 'length': length}
+					addr += length
+					pbar.update(length)
+				else:
+					addr += 1
+			except UnicodeDecodeError:
+				addr += 1
 
 w = slob.create("srpski.slob")
 
