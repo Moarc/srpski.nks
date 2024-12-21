@@ -1,6 +1,6 @@
 ## Why?
 Srpski elektronski rečnik, published in the late 2000s is, AFAIU, the only ever digital publication of data from the Matica srpska and SANU dictionaries. Despite lagging several volumes (by now) behind the publication of the SANU dictionary, it is still the largest digital dictionary of the Serbian language, numbering ~270000 headwords (Wiktionary has ~70000). Furthermore, the entries are annotated with accents, which are frequently missing from other digital dictionaries. \
-Unfortunately, it utilized an entirely custom file format, which had to be reverse-engineered. \
+Unfortunately, it utilized an entirely custom file format, which had to be reverse-engineered. It also won't be getting any updates - some time after 2009 the authors switched to an online-only model. \
 Fortunately, C# decompiles easily into readable code 8-)
 
 ## Short-term goals
