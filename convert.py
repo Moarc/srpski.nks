@@ -17,7 +17,7 @@ nksData = {}
 for index in [100]: #, 124
 	nksData[index] = {}
 	addr = nks.getInd(nksFile, index)
-	with tqdm(initial=nks.getInd(nksFile, index), total=nks.getInd(nksFile, index+8)) as pbar:
+	with tqdm(initial=nks.getInd(nksFile, index), total=nks.getInd(nksFile, index+8), unit_scale=True, unit="B") as pbar:
 		while addr < nks.getInd(nksFile, index+8):
 			try:
 				length, output = nks.getStr(nksFile, addr)
