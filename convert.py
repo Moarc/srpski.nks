@@ -35,10 +35,10 @@ w = slob.create("srpski.slob")
 for word in nksData[100]:
 	soup = BeautifulSoup(nksData[100][word]['content'], 'html.parser')
 	try:
-		for tag in soup.findAll('span', string=True):
+		for tag in soup.find_all('span', string=True):
 			if tag.has_attr('style') and "RSANU2" in tag['style']:
 				tag.string = tag.string.translate(rsanu2)
-		for tag in soup.findAll('sup', recursive=True, string=True):
+		for tag in soup.find_all('sup', recursive=True, string=True):
 			tag.string = tag.string.translate(sup)
 		headWord = ""
 		b = soup.find('b')
