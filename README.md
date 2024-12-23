@@ -5,7 +5,7 @@ Fortunately, C# decompiles easily into readable code 8-)
 
 ## Short-term goals
 - [ ] determine the actual size of the dictionary, to make sure we're not omitting any data
-- [ ] clean up the headwords and implement aliases for synonyms ("word1, word2" and "word1 = word2" in the original)
+- [ ] implement aliases for synonyms ("word1, word2" and "word1 = word2" in the original)
 
 ## Long-term goals
 - [ ] utilize the abbreviations/sources list
