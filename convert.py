@@ -35,6 +35,9 @@ w = slob.create("srpski.slob")
 for word in nksData[100]:
 	soup = BeautifulSoup(nksData[100][word]['content'], 'html.parser')
 	try:
+		for tag in soup.findAll('span', string=True):
+			if tag.has_attr('style') and "RSANU2" in tag['style']:
+				tag.string = rsanu2.rsanudecode.sub(lambda x: rsanu2.rsanu[x.group()], tag.string)
 		headWord = ""
 		b = soup.find('b')
 		while b.name == 'b':
@@ -43,11 +46,7 @@ for word in nksData[100]:
 				b = b.find_next_sibling()
 			else:
 				 break
-		headWord = rsanu2.rsanudecode.sub(lambda x: rsanu2.rsanu[x.group()], headWord)
 		headWord = headWord.rstrip(', ')
-		for tag in soup.findAll('span', string=True):
-			if tag.has_attr('style') and "RSANU2" in tag['style']:
-				tag.string = rsanu2.rsanudecode.sub(lambda x: rsanu2.rsanu[x.group()], tag.string)
 		print(word, ":", headWord)
 		w.add(soup.encode("utf-8"), headWord, content_type=mimetypes[".html"])
 	except AttributeError:
