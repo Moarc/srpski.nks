@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import numpy
+
 def getInd(fileHandle, address, xor=False):
     fileHandle.seek(address)
     if xor == True:
@@ -13,17 +15,15 @@ def getStr(fileHandle, address, xor=True, maxlength=20000):
     fileHandle.seek(address)
     if xor == True:
             #print("xor == True in getStr")
-            bxor = int.from_bytes(fileHandle.read(1), byteorder='little')
+            bxor = fileHandle.read(1)
     length = int.from_bytes(fileHandle.read(4), byteorder='little')
     if xor == True:
-        length ^= bxor
+        length ^= int.from_bytes(bxor, byteorder='little')
     if length > maxlength or length == 0:
 #        raise Exception(f"Length is {length}!")
          return None, None
     string = fileHandle.read(length)
-    decoded = bytearray()
-    for char in string:
-        decoded.append(char^bxor)
+    decoded = (numpy.frombuffer(bxor,dtype=numpy.uint8)^numpy.frombuffer(string, dtype=numpy.uint8)).tobytes()
     try:
         decoded = decoded.decode('utf8')
     except UnicodeDecodeError:
