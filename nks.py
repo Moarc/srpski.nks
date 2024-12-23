@@ -5,7 +5,6 @@ import numpy
 def getInd(fileHandle, address, xor=False):
     fileHandle.seek(address)
     if xor == True:
-            #print("xor == True in getInd")
             bxor = int.from_bytes(fileHandle.read(1), byteorder='little')
     address = int.from_bytes(fileHandle.read(4), byteorder='little')
     if xor == True:
@@ -14,13 +13,11 @@ def getInd(fileHandle, address, xor=False):
 def getStr(fileHandle, address, xor=True, maxlength=20000):
     fileHandle.seek(address)
     if xor == True:
-            #print("xor == True in getStr")
             bxor = fileHandle.read(1)
     length = int.from_bytes(fileHandle.read(4), byteorder='little')
     if xor == True:
         length ^= int.from_bytes(bxor, byteorder='little')
     if length > maxlength or length == 0:
-#        raise Exception(f"Length is {length}!")
          return None, None
     string = fileHandle.read(length)
     decoded = (numpy.frombuffer(bxor,dtype=numpy.uint8)^numpy.frombuffer(string, dtype=numpy.uint8)).tobytes()
