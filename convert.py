@@ -2,7 +2,7 @@
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import nks
-import rsanu2
+from rsanu2 import rsanu2
 import slob
 
 mimetypes = {
@@ -37,7 +37,7 @@ for word in nksData[100]:
 	try:
 		for tag in soup.findAll('span', string=True):
 			if tag.has_attr('style') and "RSANU2" in tag['style']:
-				tag.string = rsanu2.rsanudecode.sub(lambda x: rsanu2.rsanu[x.group()], tag.string)
+				tag.string = tag.string.translate(rsanu2)
 		headWord = ""
 		b = soup.find('b')
 		while b.name == 'b':

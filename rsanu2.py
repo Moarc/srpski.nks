@@ -1,5 +1,4 @@
-import re
-rsanu = {
+rsanu2 = {
 "\u0112": "А̑",
 "\u0113": "а̑",
 "\u0114": "А̏",
@@ -69,5 +68,4 @@ rsanu = {
 "\u015a": "щ"
 }
 
-rsanudecode = re.compile("|".join(re.escape(character) for character in rsanu.keys()))
-#rsanudecode.sub(lambda x: rsanu[x.group()], tag.string)
+rsanu2 = str.maketrans(rsanu2)
