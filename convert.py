@@ -52,7 +52,7 @@ for word in nksData[100]:
 			if b.find_next_sibling() is not None:
 				b = b.find_next_sibling()
 			else:
-				 break
+				break
 		headWord = re.sub(r"(([0-9IV]*\.?)|,.*)", "", headWord)
 		headWord = headWord.rstrip()
 		print(word, ":", headWord)
