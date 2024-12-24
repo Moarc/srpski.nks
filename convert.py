@@ -27,8 +27,10 @@ for index in [100]: #, 124
 					pbar.update(length)
 				else:
 					addr += 1
+					pbar.update(1)
 			except UnicodeDecodeError:
 				addr += 1
+				pbar.update(1)
 
 w = slob.create("srpski.slob")
 
