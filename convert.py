@@ -41,6 +41,8 @@ for word in nksData[100]:
 		for tag in soup.find_all('span', string=True):
 			if tag.has_attr('style') and "RSANU2" in tag['style']:
 				tag.string = tag.string.translate(rsanu2)
+			if tag.has_attr('class') and tag['class'] == 'style3':
+				tag.name = 'b'
 		for tag in soup.find_all('sup', recursive=True, string=True):
 			tag.string = tag.string.translate(sup)
 		headWord = ""
