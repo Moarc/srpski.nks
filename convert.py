@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+import re
 import nks
 from rsanu2 import rsanu2, sup
 import slob
@@ -50,7 +51,8 @@ for word in nksData[100]:
 				b = b.find_next_sibling()
 			else:
 				 break
-		headWord = headWord.rstrip(', ')
+		headWord = re.sub(r"(([0-9IV]*\.?)|,.*)", "", headWord)
+		headWord = headWord.rstrip()
 		print(word, ":", headWord)
 		w.add(soup.encode("utf-8"), headWord, content_type=mimetypes[".html"])
 	except AttributeError:
