@@ -7,7 +7,7 @@ Fortunately, C# decompiles easily into readable code 8-)
 - [ ] determine the actual size of the dictionary, to make sure we're not omitting any data
 - [ ] implement aliases for synonyms ("word1, word2" and "word1 = word2" in the original)
 - [ ] handle some information from the CSS
-- [ ] fix lang tags for proper Serbian italics
+- [x] fix lang tags for proper Serbian italics
 
 ## Long-term goals
 - [ ] utilize the abbreviations/sources list
