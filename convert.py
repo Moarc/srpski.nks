@@ -38,7 +38,7 @@ w = slob.create("srpski.slob")
 for word in nksData[100]:
 	soup = BeautifulSoup(nksData[100][word]['content'], 'html.parser')
 	try:
-		for tag in soup.find_all('span', string=True):
+		for tag in soup.find_all('span'):
 			if tag.has_attr('style') and "RSANU2" in tag['style']:
 				tag.string = tag.string.translate(rsanu2)
 			if tag.has_attr('class') and tag['class'] == 'style3':
