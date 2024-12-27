@@ -6,12 +6,6 @@ import nks
 from rsanu2 import rsanu2, sup
 import slob
 
-mimetypes = {
-		".html":"text/html; charset=utf-8",
-		".css": "text/css; charset=utf-8",
-		".jpg": "image/jpg"
-	}
-
 nksFile = open("Docum.nks", "rb")
 nksData = {}
 
@@ -58,7 +52,7 @@ for word in nksData[100]:
 		headWord = re.sub(r"(([0-9IV]*\.?)|,.*)", "", headWord)
 		headWord = headWord.rstrip()
 		print(word, ":", headWord)
-		w.add(soup.encode("utf-8"), headWord, content_type=mimetypes[".html"])
+		w.add(soup.encode("utf-8"), headWord, content_type=slob.MIME_HTML)
 	except AttributeError:
 		print(word, ":", "NONETYPE")
 w.finalize()
