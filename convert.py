@@ -15,17 +15,26 @@ STRIDE = 10  # per slot: [xor][word_ptr][xor][record_ptr]
 def transform(body):
 	"""Convert a <BODY> record to a bare <p>… slob blob (selectolax).
 
-	Tags (Word style -> semantic):
-	  class="style3" -> <b>, class="style2" -> <i>
+	Tag unwrap (tag dropped, text kept):
+	  <a href=_msoanchor_N> (Word track-change bookmark links),
+	  <h1> (section markers).
+	Tag rename:
+	  class="style1" -> <sup>, class="style2" -> <i>, class="style3" -> <b>
+	  mso-bidi-font-style:italic -> <i>, mso-bidi-font-weight:bold -> <b>
 	Lang:
 	  lang= and mso-ansi-language both normalized to ISO-639-1 lang= (SR-CYR/SR
 	  -> sr, RU -> ru, HR -> hr, TR -> tr, EL -> el, BG -> bg, EN-US -> en).
 	Stripped presentation:
-	  class (MsoNormal), FONT-SIZE, MARGIN-RIGHT, FONT-FAMILY:rsanu2,
-	  mso-ansi-language.  color is kept.
+	  class (all Mso* / fr* / MsoBodyText* / etc.), FONT-SIZE, MARGIN-RIGHT,
+	  FONT-FAMILY {rsanu2, Times New Roman, OliveraRas, TNRa01, Arial Narrow},
+	  mso-ansi-language, plus margin/layout-grid-mode/text-align/text-indent/
+	  mso-bidi-font-size/letter-spacing/mso-bookmark/mso-prop-change/
+	  margin-left/font-style/mso-bidi-font-style/mso-bidi-font-weight.
+	  color, text-transform:uppercase, and the Symbol glyph face are kept.
 	Content:
 	  RSANU2 spans translate ALL child text (nested tags preserved).
-	  <sup> tags left as-is (no translation).
+	  Wingdings '?' -> <sup>+</sup>.
+	  <sup>/<sub>/<u> left as-is (no translation).
 	"""
 	p = LexborHTMLParser(body, is_fragment=True)   # is_fragment drops <html><head><body>
 	root = p.root
@@ -36,7 +45,38 @@ def transform(body):
 		# SR-CYR -> sr, EN-US -> en, RU -> ru, ...
 		return v.strip().lower().split('-')[0]
 
-	# 1) class-based tag rename (style2 -> i, style3 -> b).
+	# 0) Unwrap tags that Word only used structurally -- drop the tag, keep
+	#    text and descendants.  <a href=_msoanchor_N> are Word track-change
+	#    bookmark links; <h1> are section markers.
+	for el in list(root.traverse()):
+		if el.tag in ('a', 'h1'):
+			el.unwrap()
+
+	# 0.5) The only 'Wingdings' glyph in the dict is '?' (a superscript '+').
+	#    Run before phase 3 strips FONT-FAMILY (so the marker is readable).
+	#    Symbol-font glyphs are translated separately (rsanu2.symbol_font) and
+	#    intentionally NOT handled here.
+	for el in list(root.traverse(include_text=True)):
+		if not el.is_text_node or '?' not in el.text():
+			continue
+		par = el.parent
+		while par is not None:
+			if 'wingdings' in (par.attributes.get('style') or '').lower():
+				break
+			par = par.parent
+		if par is None:
+			continue
+		pieces = el.text().split('?')
+		for i, piece in enumerate(pieces):
+			if piece:
+				el.insert_before(piece)
+			if i < len(pieces) - 1:
+				s = p.create_node('sup')
+				s.insert_child('+')
+				el.insert_before(s)
+		el.replace_with('')
+
+	# 1) class-based tag rename (style1 -> sup, style2 -> i, style3 -> b).
 	#    Rebuild the node (tags are immutable in selectolax); class is dropped,
 	#    lang copied through norm_lang; other attrs (incl. style) carried over.
 	for sp in list(root.css('span')):
@@ -47,6 +87,8 @@ def transform(body):
 			tag, b = 'b', p.create_node('b')
 		elif 'style2' in parts:
 			tag, b = 'i', p.create_node('i')
+		elif 'style1' in parts:
+			tag, b = 'sup', p.create_node('sup')
 		else:
 			continue
 		for k, v in sp.attrs.items():
@@ -56,12 +98,13 @@ def transform(body):
 				b.attrs['lang'] = norm_lang(v)
 			else:
 				b.attrs[k] = v
-		for c in list(sp):
-			b.insert_child(c, move=True)   # move element children (whole subtrees)
-		for c in list(sp.traverse(include_text=True)):
-			if c is sp or not c.is_text_node:
-				continue
-			b.insert_child(c, move=True)   # move direct text children
+		# Move ALL direct children in document order (elements as whole subtrees,
+		# then interleaved text).  A two-step move (elements first, text second)
+		# would reorder: any <sup>/<sub> that appears AFTER running text inside the
+		# span would jump to the front.  el.iter(include_text=True) yields
+		# direct children in source order.
+		for c in list(sp.iter(include_text=True)):
+			b.insert_child(c, move=True)
 		sp.replace_with(b)
 	# 2) RSANU2: translate all child text within RSANU2 spans.
 	#    MUST run before phase 3 strips FONT-FAMILY:rsanu2 (else the
@@ -79,6 +122,18 @@ def transform(body):
 		node.replace_with(node.text().translate(rsanu2))
 	# 3) normalize lang (lang= and mso-ansi-language -> lang=), strip MsoNormal
 	#    class and presentation declarations, drop now-empty style attrs.
+	#    Collect mso-bidi-font-style:italic / mso-bidi-font-weight:bold nodes
+	#    for the tag-rebuild pass in phase 4.  Stripped font-family values are
+	#    rsanu2 and other alternate/glyph faces (Times New Roman, OliveraRas,
+	#    TNRa01, Arial Narrow); the Symbol glyph face is kept.
+	STRIP_PROPS = {
+		'margin', 'layout-grid-mode', 'text-align', 'text-indent',
+		'mso-bidi-font-size', 'letter-spacing', 'mso-bookmark',
+		'mso-prop-change', 'margin-left', 'font-style',
+		'mso-bidi-font-style', 'mso-bidi-font-weight', 'font-weight',
+	}
+	STRIP_FONTS = {'rsanu2', 'times new roman', 'oliveraras', 'tnra01', 'arial narrow', 'wingdings'}
+	to_rebuild = []
 	for el in list(root.traverse()):
 		if 'class' in el.attrs:
 			del el.attrs['class']
@@ -92,6 +147,8 @@ def transform(body):
 		kept = []
 		has_mso = False
 		mso_val = None
+		make_i = False
+		make_b = False
 		for decl in style.split(';'):
 			decl = decl.strip()
 			if not decl or ':' not in decl:
@@ -105,16 +162,54 @@ def transform(body):
 				continue
 			if prop_p in ('font-size', 'margin-right'):
 				continue
-			if prop_p == 'font-family' and val_l == 'rsanu2':
+			if prop_p == 'font-family':
+				if val_l not in ('symbol',) and val_l in STRIP_FONTS:
+					continue
+				kept.append(decl)
+				continue
+			if prop_p == 'mso-bidi-font-style' and val_l == 'italic':
+				make_i = True
+				continue
+			if prop_p == 'mso-bidi-font-weight' and val_l == 'bold':
+				make_b = True
+				continue
+			if prop_p == 'font-weight' and val_l == 'bold':
+				make_b = True
+				continue
+			if prop_p in STRIP_PROPS:
 				continue
 			kept.append(decl)
 		if has_mso and (lang_val is None or 'lang' not in el.attributes):
 			lang_val = mso_val
 			el.attrs['lang'] = lang_val
+		if make_i:
+			to_rebuild.append((el, 'i'))
+		if make_b:
+			to_rebuild.append((el, 'b'))
 		if kept:
 			el.attrs['style'] = '; '.join(kept)
 		else:
 			del el.attrs['style']
+
+	# 4) rebuild collected italic/bold nodes to <i>/<b> (tags are immutable in
+	#    selectolax; rebuild, dropping class, carrying lang and other attrs).
+	for el, tag in to_rebuild:
+		if el.tag == tag:
+			continue
+		b = p.create_node(tag)
+		for k, v in el.attrs.items():
+			if k == 'class':
+				continue
+			if k == 'lang':
+				b.attrs['lang'] = norm_lang(v)
+			else:
+				b.attrs[k] = v
+		# Move ALL direct children in document order (elements as whole subtrees,
+		# then interleaved text) so a <sup>/<sub> inside the italic/bold span
+		# keeps its original position instead of jumping to the front.
+		for c in list(el.iter(include_text=True)):
+			b.insert_child(c, move=True)
+		el.replace_with(b)
 	return p.html
 
 
