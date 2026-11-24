@@ -35,8 +35,9 @@ with tqdm(total=end - begin, unit_scale=True, unit="B") as pbar:
 			for tag in soup.find_all('span'):
 				if tag.string and "RSANU2" in (tag.get('style') or ''):
 					tag.string = tag.string.translate(rsanu2)
-				if tag.has_attr('class') and tag['class'] == 'style3':
+				if tag.has_attr('class') and 'style3' in tag['class']:
 					tag.name = 'b'
+					tag.attrs.pop('class', None)
 				if tag.has_attr('lang') and tag['lang'] == 'SR-CYR':
 					tag['lang'] = 'sr'
 			for tag in soup.find_all('sup', recursive=True, string=True):
