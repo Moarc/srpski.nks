@@ -34,7 +34,8 @@ def transform(body):
 	Content:
 	  RSANU2 spans translate ALL child text (nested tags preserved).
 	  Wingdings '?' -> <sup>+</sup>.
-	  <sup>/<sub>/<u> left as-is (no translation).
+	  <sup>0</sup>/<sup>°</sup> -> ° (tag dropped); other <sup> left as-is.
+	  <sub>/<u> left as-is (no translation).
 	"""
 	p = LexborHTMLParser(body, is_fragment=True)   # is_fragment drops <html><head><body>
 	root = p.root
@@ -75,6 +76,16 @@ def transform(body):
 				s.insert_child('+')
 				el.insert_before(s)
 		el.replace_with('')
+
+	# 0.6) A <sup> holding a lone '0' is a degree sign (90<sup>0</sup> -> 90°);
+	#    the same for an already-present '<sup>°</sup>'.  Strip the tag, keep
+	#    '°'.  Every other <sup> (sub-entry markers like <sup>1</sup>, and
+	#    multi-digit values like <sup>10</sup>) is left untouched.
+	for el in list(root.traverse()):
+		if el.tag != 'sup':
+			continue
+		if el.text() in ('0', '\u00b0'):
+			el.replace_with('\u00b0')
 
 	# 1) class-based tag rename (style1 -> sup, style2 -> i, style3 -> b).
 	#    Rebuild the node (tags are immutable in selectolax); class is dropped,
