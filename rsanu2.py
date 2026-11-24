@@ -68,4 +68,18 @@ rsanu2 = {
 "\u015a": "щ"
 }
 
+symbol_font = {
+    "E": "\u25e1",   # -> ◡ (U+25E1)
+    "J": "\u03d1",   # -> ϑ (U+03D1, GREEK SMALL LETTER PHI SYMBOL)
+    "a": "\u03b1",   # -> α (U+03B1, GREEK SMALL LETTER ALPHA)
+    "b": "\u03b2",   # -> β (U+03B2)
+    "g": "\u03b3",   # -> γ (U+03B3)
+    "i": "\u03b9",   # -> ι (U+03B9, GREEK SMALL LETTER IOTA)
+    "j": "\u03c6",   # -> φ (U+03C6, GREEK SMALL LETTER PHI)
+    "p": "\u03c0",   # -> π (U+03C0)
+    "q": "\u03b8",   # -> θ (U+03B8, GREEK SMALL LETTER THETA)
+    "w": "\u03c9",   # -> ω (U+03C9)
+}
+
 rsanu2 = str.maketrans(rsanu2)
+symbol_font = str.maketrans(symbol_font)
