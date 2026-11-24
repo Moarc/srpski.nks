@@ -6,7 +6,7 @@ Fortunately, C# decompiles easily into readable code 8-)
 ## Short-term goals
 - [x] determine the actual size of the dictionary, to make sure we're not omitting any data
 - [x] implement aliases for synonyms ("word1, word2" and "word1 = word2" in the original): invalidated; outputting multiple entries with the same headword Just Works™
-- [ ] handle some information from the CSS
+- [x] handle some information from the CSS
 - [x] fix lang tags for proper Serbian italics
 - [ ] utilize the abbreviations/sources list
 
