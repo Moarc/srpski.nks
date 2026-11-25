@@ -230,6 +230,7 @@ end   = nks.getInd(nksFile, IND + 4)      # raw header int (offset 112)
 count = (end - begin) // STRIDE
 
 w = slob.create("srpski.slob")
+w.tag("label", "Српски електронски речник")
 
 with tqdm(total=end - begin, unit_scale=True, unit="B") as pbar:
 	for i in range(count):
