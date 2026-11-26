@@ -35,6 +35,8 @@ def transform(body):
 	  RSANU2 spans translate ALL child text (nested tags preserved).
 	  Wingdings '?' -> <sup>+</sup>.
 	  <sup>0</sup>/<sup>°</sup> -> ° (tag dropped); other <sup> left as-is.
+	  <sup>l</sup> -> <sup>1</sup> (lumped sub-entry marker 'l' is really '1');
+	    only a lone 'l' text node whose parent is <sup> is rewritten.
 	  <sub>/<u> left as-is (no translation).
 	"""
 	p = LexborHTMLParser(body, is_fragment=True)   # is_fragment drops <html><head><body>
@@ -86,6 +88,16 @@ def transform(body):
 			continue
 		if el.text() in ('0', '\u00b0'):
 			el.replace_with('\u00b0')
+
+	# 0.7) A source <sup> whose sole content is the single Latin letter 'l' is a
+	#    corrupted sub-entry marker; it should be <sup>1</sup>.  Rewrite only the
+	#    lone 'l' text node (tag kept) and run before phase 1 creates new
+	#    <sup> from class=style1 spans, so those are never affected.
+	for node in list(root.traverse(include_text=True)):
+		if node.is_text_node and node.text() == 'l':
+			par = node.parent
+			if par is not None and par.tag == 'sup':
+				node.replace_with('1')
 
 	# 1) class-based tag rename (style1 -> sup, style2 -> i, style3 -> b).
 	#    Rebuild the node (tags are immutable in selectolax); class is dropped,
@@ -243,6 +255,7 @@ with tqdm(total=end - begin, unit_scale=True, unit="B") as pbar:
 									require_body=False)  # UTF-16 headword
 		if body is None or headword is None:
 			continue
+		headword = headword.replace('\u006c', '')  # drop stray Latin 'l' from headword
 		try:
 			html = transform(body)
 		except Exception as e:
