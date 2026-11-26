@@ -48,56 +48,43 @@ def transform(body):
 		# SR-CYR -> sr, EN-US -> en, RU -> ru, ...
 		return v.strip().lower().split('-')[0]
 
-	# 0) Unwrap tags that Word only used structurally -- drop the tag, keep
-	#    text and descendants.  <a href=_msoanchor_N> are Word track-change
-	#    bookmark links; <h1> are section markers.
-	for el in list(root.traverse()):
-		if el.tag in ('a', 'h1'):
-			el.unwrap()
-
-	# 0.5) The only 'Wingdings' glyph in the dict is '?' (a superscript '+').
-	#    Run before phase 3 strips FONT-FAMILY (so the marker is readable).
-	#    Symbol-font glyphs are translated separately (rsanu2.symbol_font) and
-	#    intentionally NOT handled here.
-	for el in list(root.traverse(include_text=True)):
-		if not el.is_text_node or '?' not in el.text():
-			continue
-		par = el.parent
-		while par is not None:
-			if 'wingdings' in (par.attributes.get('style') or '').lower():
-				break
-			par = par.parent
-		if par is None:
-			continue
-		pieces = el.text().split('?')
-		for i, piece in enumerate(pieces):
-			if piece:
-				el.insert_before(piece)
-			if i < len(pieces) - 1:
-				s = p.create_node('sup')
-				s.insert_child('+')
-				el.insert_before(s)
-		el.replace_with('')
-
-	# 0.6) A <sup> holding a lone '0' is a degree sign (90<sup>0</sup> -> 90°);
-	#    the same for an already-present '<sup>°</sup>'.  Strip the tag, keep
-	#    '°'.  Every other <sup> (sub-entry markers like <sup>1</sup>, and
-	#    multi-digit values like <sup>10</sup>) is left untouched.
-	for el in list(root.traverse()):
-		if el.tag != 'sup':
-			continue
-		if el.text() in ('0', '\u00b0'):
-			el.replace_with('\u00b0')
-
-	# 0.7) A source <sup> whose sole content is the single Latin letter 'l' is a
-	#    corrupted sub-entry marker; it should be <sup>1</sup>.  Rewrite only the
-	#    lone 'l' text node (tag kept) and run before phase 1 creates new
-	#    <sup> from class=style1 spans, so those are never affected.
+	# 0) One pre-order pass over elements AND text nodes that folds the four
+	#    pre-class-rename steps together (previously 4 separate traversals):
+	#      - unwrap structural tags (drop the tag, keep text/descendants):
+	#        <a href=_msoanchor_N> (Word track-change bookmarks) and <h1> (markers);
+	#      - Wingdings '?' -> split into pieces with a '+' per '?' inside a
+	#        <sup> (the only Wingdings glyph; font-family stripped in phase 3,
+	#        so detect the marker here); Symbol-font glyphs are handled elsewhere;
+	#      - <sup>0</sup>/<sup>°</sup> -> drop the tag, keep '°' (degree sign);
+	#      - lone <sup>l</sup> -> keep tag, rewrite 'l' to '1' (corrupted marker).
+	#    Markers are disjoint and unwrapping a/h1 only reparents, so the order
+	#    within this single pass matches the old separate passes.  Run before
+	#    phase 1 creates new <sup> from class=style1, so those are untouched.
 	for node in list(root.traverse(include_text=True)):
-		if node.is_text_node and node.text() == 'l':
-			par = node.parent
-			if par is not None and par.tag == 'sup':
+		if node.is_text_node:
+			t = node.text()
+			if '?' in t:
+				par = node.parent
+				while par is not None:
+					if 'wingdings' in (par.attributes.get('style') or '').lower():
+						break
+					par = par.parent
+				if par is not None:
+					pieces = t.split('?')
+					for i, piece in enumerate(pieces):
+						if piece:
+							node.insert_before(piece)
+						if i < len(pieces) - 1:
+							s = p.create_node('sup')
+							s.insert_child('+')
+							node.insert_before(s)
+					node.replace_with('')
+			elif t == 'l' and node.parent is not None and node.parent.tag == 'sup':
 				node.replace_with('1')
+		elif node.tag in ('a', 'h1'):
+			node.unwrap()
+		elif node.tag == 'sup' and node.text() in ('0', '\u00b0'):
+			node.replace_with('\u00b0')
 
 	# 1) class-based tag rename (style1 -> sup, style2 -> i, style3 -> b).
 	#    Rebuild the node (tags are immutable in selectolax); class is dropped,
